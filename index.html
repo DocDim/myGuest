@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Guest Registration</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* Rounded button */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Darker indigo on hover */
+        }
+        .btn-secondary {
+            background-color: #e0e7ff; /* Light indigo */
+            color: #4f46e5; /* Indigo text */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            background-color: #c7d2fe; /* Lighter indigo on hover */
+        }
+        .input-field {
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo on focus */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Focus ring */
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.75rem; /* Space between rows */
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #f3f4f6; /* Light gray for table header */
+            font-weight: 600;
+            color: #4b5563; /* Darker text */
+            border-radius: 0.75rem; /* Rounded corners for header */
+        }
+        tr {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* Rounded corners for rows */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* Subtle shadow for rows */
+        }
+        tr:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease-in-out;
+        }
+        .status-checked-in {
+            color: #10b981; /* Green for checked-in */
+            font-weight: 600;
+        }
+        .status-pending {
+            color: #f59e0b; /* Amber for pending */
+            font-weight: 600;
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .message-success {
+            background-color: #d1fae5; /* Light green */
+            color: #065f46; /* Dark green text */
+        }
+        .message-error {
+            background-color: #fee2e2; /* Light red */
+            color: #991b1b; /* Dark red text */
+        }
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            min-height: 74px; /* Added min-height for visibility */
+            min-width: 74px; /* Added min-width for visibility */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container py-8">
+        <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Event Guest Registration</h1>
+
+        <!-- Navigation to Check-in Page -->
+        <div class="card text-center">
+            <p class="text-lg mb-4">Go to the check-in page:</p>
+            <a href="checkin.html" class="btn-primary inline-block">Go to Check-in</a>
+        </div>
+
+        <!-- User Info Display -->
+        <div class="card flex items-center justify-between">
+            <p class="text-lg font-semibold">Current User:</p>
+            <span id="userNameDisplay" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-mono break-all">Not Logged In</span>
+            <button id="logoutButton" class="btn-secondary hidden ml-4">Logout</button>
+        </div>
+        <div id="userEmailDisplayContainer" class="card flex items-center justify-between mt-4 hidden">
+            <p class="text-lg font-semibold">User Email:</p>
+            <span id="userEmailDisplay" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-mono break-all"></span>
+        </div>
+
+
+        <!-- Message Box -->
+        <div id="messageBox" class="message-box hidden"></div>
+
+        <!-- User Login/Register Section -->
+        <div id="authSection" class="card">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Login / Register</h2>
+            <p class="text-gray-600 mb-4">Enter your details to log in or register a new account.</p>
+            <form id="authForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="userEmailInput" class="block text-gray-700 text-sm font-medium mb-2">Your Email</label>
+                    <input type="email" id="userEmailInput" class="input-field" placeholder="e.g., jane.doe@example.com" required>
+                </div>
+                <div>
+                    <label for="passwordInput" class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="passwordInput" class="input-field" placeholder="Enter your password" required>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="userFullNameInput" class="block text-gray-700 text-sm font-medium mb-2">Your Name (for Registration)</label>
+                    <input type="text" id="userFullNameInput" class="input-field" placeholder="e.g., Jane Doe">
+                </div>
+                <div class="md:col-span-2 flex justify-end gap-4">
+                    <button type="submit" id="loginButton" class="btn-primary">Login</button>
+                    <button type="button" id="registerButton" class="btn-secondary">Register</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Main Content Section (hidden until logged in) -->
+        <div id="mainContent" class="hidden">
+            <!-- Add New Guest Section -->
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Add New Guest</h2>
+                <form id="addGuestForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="guestName" class="block text-gray-700 text-sm font-medium mb-2">Guest Name</label>
+                        <input type="text" id="guestName" class="input-field" placeholder="John Doe" required>
+                    </div>
+                    <div>
+                        <label for="guestEmail" class="block text-gray-700 text-sm font-medium mb-2">Guest Email</label>
+                        <input type="email" id="guestEmail" class="input-field" placeholder="john.doe@example.com" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="placeNumber" class="block text-gray-700 text-sm font-medium mb-2">Place Number</label>
+                        <input type="text" id="placeNumber" class="input-field" placeholder="A101" required>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="btn-primary">Add Guest</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Import Guest List Section -->
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Import Guest List (CSV)</h2>
+                <p class="text-gray-600 mb-4">Upload a CSV file with columns: `Name,Email,Place Number` (header row is optional).</p>
+                <form id="importGuestForm" class="flex flex-col md:flex-row gap-4 items-end">
+                    <input type="file" id="csvFileInput" accept=".csv" class="input-field flex-grow py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <button type="submit" class="btn-primary">Import CSV</button>
+                </form>
+            </div>
+
+            <!-- Guest List Section -->
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Guest List</h2>
+                <div id="guestListContainer" class="overflow-x-auto">
+                    <div id="loadingGuests" class="text-center py-8">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-4 text-gray-600">Loading guests...</p>
+                    </div>
+                    <table id="guestTable" class="min-w-full hidden">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Place Number</th>
+                                <th>QR Code</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guestTableBody">
+                            <!-- Guest rows will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p id="noGuestsMessage" class="text-center text-gray-500 py-8 hidden">No guests registered yet. Add one above!</p>
+                </div>
+            </div>
+        </div> <!-- End of mainContent -->
+    </div>
+
+    <!-- Main Application Script -->
+    
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer" onload="console.log('qrcode.js loaded successfully!')" onerror="console.error('Failed to load qrcode.js!')"></script>
+    <script>
+        // Function to generate a UUID (Universally Unique Identifier)
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        let currentUserId = null; // Will store the auto-generated UUID
+        let currentUserName = null; // Will store the user's full name
+        let currentUserEmail = null; // Will store the user's email (used for login)
+        let currentSessionToken = null; // Stores the session token
+
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const userEmailDisplayContainer = document.getElementById('userEmailDisplayContainer');
+        const logoutButton = document.getElementById('logoutButton');
+        const messageBox = document.getElementById('messageBox');
+        const authSection = document.getElementById('authSection');
+        const authForm = document.getElementById('authForm');
+        const passwordInput = document.getElementById('passwordInput');
+        const userFullNameInput = document.getElementById('userFullNameInput');
+        const userEmailInput = document.getElementById('userEmailInput');
+        const loginButton = document.getElementById('loginButton');
+        const registerButton = document.getElementById('registerButton');
+        const mainContent = document.getElementById('mainContent');
+
+        const addGuestForm = document.getElementById('addGuestForm');
+        const guestNameInput = document.getElementById('guestName');
+        const guestEmailInput = document.getElementById('guestEmail');
+        const placeNumberInput = document.getElementById('placeNumber');
+        const guestTableBody = document.getElementById('guestTableBody');
+        const guestTable = document.getElementById('guestTable');
+        const noGuestsMessage = document.getElementById('noGuestsMessage');
+        const loadingGuests = document.getElementById('loadingGuests');
+        const importGuestForm = document.getElementById('importGuestForm');
+        const csvFileInput = document.getElementById('csvFileInput');
+
+        const API_URL = 'api.php'; // The endpoint for our PHP backend
+
+        // Function to display messages
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type === 'success' ? 'message-success' : 'message-error'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        // Function to update UI based on login state
+        function updateLoginStateUI() {
+            if (currentSessionToken && currentUserId) { // Check for both token and ID
+                userNameDisplay.textContent = currentUserName || 'Logged In'; // Show user's name
+                userEmailDisplay.textContent = currentUserEmail || 'N/A';
+                userEmailDisplayContainer.classList.remove('hidden');
+                logoutButton.classList.remove('hidden');
+                authSection.classList.add('hidden');
+                mainContent.classList.remove('hidden'); // Show main content
+                fetchGuests(); // Fetch guests only when logged in
+            } else {
+                userNameDisplay.textContent = 'Not Logged In';
+                userEmailDisplay.textContent = '';
+                userEmailDisplayContainer.classList.add('hidden');
+                logoutButton.classList.add('hidden');
+                authSection.classList.remove('hidden');
+                mainContent.classList.add('hidden'); // Hide main content
+                guestTableBody.innerHTML = ''; // Clear table
+                guestTable.classList.add('hidden');
+                noGuestsMessage.classList.remove('hidden');
+                noGuestsMessage.textContent = "Please log in to view and manage guests.";
+            }
+        }
+
+        // Helper to make authenticated fetch requests
+        async function authenticatedFetch(url, options = {}) {
+            if (!currentSessionToken) {
+                showMessage("Authentication required. Please log in.", "error");
+                // Force UI update to login state
+                currentUserId = null;
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+                throw new Error("Not authenticated.");
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${currentSessionToken}`
+            };
+
+            const response = await fetch(url, options);
+
+            if (response.status === 401) { // Unauthorized
+                showMessage("Session expired or invalid. Please log in again.", "error");
+                currentUserId = null; // Clear state
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+                throw new Error("Authentication failed.");
+            }
+            return response;
+        }
+
+
+        // Handle Login
+        loginButton.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent full form submission
+            const email = userEmailInput.value.trim(); // Login by email
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        userEmail: email, // Send email for login
+                        password: password
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUserId = data.userId; // This will be the UUID from backend
+                    currentUserName = data.userName;
+                    currentUserEmail = data.userEmail;
+                    currentSessionToken = data.sessionToken;
+
+                    localStorage.setItem('eventManagerUserId', currentUserId);
+                    localStorage.setItem('eventManagerUserName', currentUserName);
+                    localStorage.setItem('eventManagerUserEmail', currentUserEmail);
+                    localStorage.setItem('eventManagerSessionToken', currentSessionToken);
+
+                    updateLoginStateUI();
+                    showMessage(`Logged in as ${currentUserName} (${currentUserEmail})!`, 'success');
+                } else {
+                    showMessage(`Login failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during login:", error);
+                showMessage("Network error or server issue during login.", "error");
+            }
+        });
+
+        // Handle Registration
+        registerButton.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent full form submission
+            const userFullName = userFullNameInput.value.trim();
+            const userEmail = userEmailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!userFullName || !userEmail || !password) {
+                showMessage("Please fill in all fields (Name, Email, Password) for registration.", "error");
+                return;
+            }
+
+            // Auto-generate userId (UUID) for registration
+            const newUserId = generateUUID();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        userId: newUserId, // Send auto-generated UUID
+                        userName: userFullName,
+                        userEmail: userEmail,
+                        password: password
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Registration successful: ${data.message}`, 'success');
+                    // Optionally clear form or auto-login
+                    // authForm.reset();
+                    // After successful registration, you might want to auto-login
+                    // For now, we'll just show the message and let user manually login
+                } else {
+                    showMessage(`Registration failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during registration:", error);
+                showMessage("Network error or server issue during registration.", "error");
+            }
+        });
+
+
+        // Handle logout button click
+        logoutButton.addEventListener('click', async () => {
+            if (!currentSessionToken) {
+                showMessage("You are not logged in.", "error");
+                return;
+            }
+            try {
+                const response = await authenticatedFetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'logout',
+                        sessionToken: currentSessionToken // Send token for invalidation
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage("Logged out successfully.", "success");
+                } else {
+                    showMessage(`Logout failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during logout:", error);
+                showMessage("Network error or server issue during logout.", "error");
+            } finally {
+                // Always clear client-side state regardless of backend success/failure
+                currentUserId = null;
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+            }
+        });
+
+        // Generate QR Code
+        function generateQRCode(text, elementId) {
+            const qrContainer = document.getElementById(elementId);
+            if (!qrContainer) {
+                console.error("QR code container not found:", elementId);
+                return;
+            }
+            qrContainer.innerHTML = ''; // Clear previous QR code
+            // Check if QRCode is defined before trying to use it
+            if (typeof QRCode === 'undefined') {
+                console.error("QRCode library not loaded. Cannot generate QR code.");
+                qrContainer.textContent = 'QR Library Error'; // Indicate library missing
+                return;
+            }
+            try {
+                new QRCode(qrContainer, {
+                    text: text,
+                    width: 64,
+                    height: 64,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                // console.log(`QR code generated for ID: ${text} in element: ${elementId}`); // Log success
+            } catch (e) {
+                console.error(`Error generating QR code for ID: ${text} in element: ${elementId}`, e);
+                qrContainer.textContent = 'QR Error'; // Show text if generation fails
+            }
+        }
+
+        // Render guests to the table
+        function renderGuests(guests) {
+            guestTableBody.innerHTML = ''; // Clear existing rows
+            loadingGuests.classList.add('hidden'); // Hide loading spinner
+
+            if (guests.length === 0) {
+                guestTable.classList.add('hidden');
+                noGuestsMessage.classList.remove('hidden');
+                noGuestsMessage.textContent = "No guests registered yet. Add one above!";
+                return;
+            }
+
+            guestTable.classList.remove('hidden');
+            noGuestsMessage.classList.add('hidden');
+
+            guests.forEach(guest => {
+                const row = guestTableBody.insertRow();
+                row.id = `guest-row-${guest.id}`; // Assign an ID to the row for easy access
+
+                const nameCell = row.insertCell();
+                nameCell.textContent = guest.name;
+
+                const emailCell = row.insertCell();
+                emailCell.textContent = guest.email;
+
+                const placeNumberCell = row.insertCell();
+                placeNumberCell.textContent = guest.place_number; // Note: PHP returns 'place_number'
+
+                const qrCodeCell = row.insertCell();
+                const qrId = `qrcode-${guest.id}`;
+                // Create an anchor tag to wrap the QR code
+                const qrLink = document.createElement('a');
+                // The QR code itself will now encode the full URL
+                const qrCodeData = `http:\/\/vps-12a60304.vps.ovh.net\/myguest\/checkin.html?guestId=${guest.id}`;
+                qrLink.href = qrCodeData; // Set the link's href to the same URL
+                qrLink.id = `qr-link-${guest.id}`; // Optional: Add an ID to the link if needed
+                qrLink.className = 'qr-code-container'; // Apply styling to the link
+
+                qrCodeCell.appendChild(qrLink); // Append the link to the cell
+
+                // Generate QR code inside the link, using the full URL as its data
+                generateQRCode(qrCodeData, `qr-link-${guest.id}`); // Pass the link's ID
+
+                const statusCell = row.insertCell();
+                statusCell.textContent = guest.status;
+                statusCell.className = guest.status === 'Checked-in' ? 'status-checked-in' : 'status-pending';
+            });
+        }
+
+        // Fetch guests from the backend
+        async function fetchGuests() {
+            if (!currentUserId || !currentSessionToken) { // Only fetch if logged in
+                return;
+            }
+            loadingGuests.classList.remove('hidden');
+            guestTable.classList.add('hidden');
+            noGuestsMessage.classList.add('hidden');
+
+            try {
+                const response = await authenticatedFetch(`${API_URL}?action=getGuests&userId=${currentUserId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Sort guests by name for consistent display
+                    data.guests.sort((a, b) => a.name.localeCompare(b.name));
+                    renderGuests(data.guests);
+                } else {
+                    showMessage(`Error fetching guests: ${data.message}`, "error");
+                    noGuestsMessage.textContent = `Error loading guests: ${data.message}`;
+                    noGuestsMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error fetching guests:", error);
+                // Error handled by authenticatedFetch, no need to show here
+            } finally {
+                loadingGuests.classList.add('hidden');
+            }
+        };
+
+        // Add a new guest
+        addGuestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUserId || !currentSessionToken) {
+                showMessage("Please log in to add guests.", "error");
+                return;
+            }
+
+            const name = guestNameInput.value.trim();
+            const email = guestEmailInput.value.trim();
+            const placeNumber = placeNumberInput.value.trim();
+
+            if (!name || !email || !placeNumber) {
+                showMessage("Please fill in all guest details.", "error");
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'addGuest',
+                        userId: currentUserId,
+                        name,
+                        email,
+                        placeNumber,
+                        status: 'Pending'
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Guest added successfully!');
+                    addGuestForm.reset(); // Clear the form
+                    fetchGuests(); // Refresh the list
+                } else {
+                    showMessage(`Failed to add guest: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error adding guest:", error);
+                // Error handled by authenticatedFetch, no need to show here
+            }
+        });
+
+        // Import guests from CSV
+        importGuestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUserId || !currentSessionToken) {
+                showMessage("Please log in to import guests.", "error");
+                return;
+            }
+
+            const file = csvFileInput.files[0];
+            if (!file) {
+                showMessage("Please select a CSV file to import.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const csvContent = event.target.result;
+                const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+                let importedCount = 0;
+                let errorCount = 0;
+
+                const firstLine = lines[0].toLowerCase().trim();
+                const hasHeader = firstLine.startsWith('name,') || firstLine.startsWith('"name",') || firstLine.includes('place number');
+                const dataLines = hasHeader ? lines.slice(1) : lines;
+
+                for (const line of dataLines) {
+                    const columns = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+                    if (columns.length >= 3) {
+                        const name = columns[0];
+                        const email = columns[1];
+                        const placeNumber = columns[2];
+
+                        if (name && email && placeNumber) {
+                            try {
+                                const response = await authenticatedFetch(API_URL, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        action: 'addGuest',
+                                        userId: currentUserId,
+                                        name,
+                                        email,
+                                        placeNumber,
+                                        status: 'Pending'
+                                    })
+                                });
+                                const data = await response.json();
+                                if (data.success) {
+                                    importedCount++;
+                                } else {
+                                    errorCount++;
+                                    console.error("Error adding guest from CSV:", data.message);
+                                }
+                            } catch (error) {
+                                console.error("Network error adding guest from CSV:", error);
+                                errorCount++;
+                            }
+                        } else {
+                            errorCount++;
+                        }
+                    }
+                }
+
+                if (importedCount > 0) {
+                    showMessage(`Successfully imported ${importedCount} guests. ${errorCount > 0 ? `(${errorCount} guests had errors or invalid data)` : ''}`);
+                } else if (errorCount > 0) {
+                    showMessage(`No guests imported. ${errorCount} guests had errors or invalid data.`, "error");
+                } else {
+                    showMessage("No valid guest data found in the CSV file.", "error");
+                }
+                importGuestForm.reset(); // Clear the file input
+                fetchGuests(); // Refresh the list after import
+            };
+            reader.onerror = (error) => {
+                console.error("Error reading CSV file:", error);
+                showMessage("Failed to read CSV file.", "error");
+            };
+            reader.readAsText(file);
+        });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Try to retrieve a previously logged-in user
+            currentUserId = localStorage.getItem('eventManagerUserId');
+            currentUserName = localStorage.getItem('eventManagerUserName');
+            currentUserEmail = localStorage.getItem('eventManagerUserEmail');
+            currentSessionToken = localStorage.getItem('eventManagerSessionToken');
+
+            updateLoginStateUI();
+        });
+
+        // Periodically refresh guests (simulating real-time updates) only if logged in
+        setInterval(() => {
+            if (currentUserId && currentSessionToken) {
+                fetchGuests();
+            }
+        }, 5000); // Fetch every 5 seconds
+    </script>
+</body>
+</html>

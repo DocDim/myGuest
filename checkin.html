@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Guest Check-in</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- html5-qrcode CDN for QR code scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .container {
+            max-width: 800px; /* Slightly narrower container for check-in */
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* Rounded button */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Darker indigo on hover */
+        }
+        .btn-secondary {
+            background-color: #e0e7ff; /* Light indigo */
+            color: #4f46e5; /* Indigo text */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            background-color: #c7d2fe; /* Lighter indigo on hover */
+        }
+        .input-field {
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo on focus */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Focus ring */
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .message-success {
+            background-color: #d1fae5; /* Light green */
+            color: #065f46; /* Dark green text */
+        }
+        .message-error {
+            background-color: #fee2e2; /* Light red */
+            color: #991b1b; /* Dark red text */
+        }
+        .guest-info-display {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        #reader {
+            width: 100%;
+            max-width: 400px; /* Limit scanner width */
+            margin: 1rem auto;
+            border: 2px solid #6366f1;
+            border-radius: 0.75rem;
+            overflow: hidden; /* Ensures video stays within bounds */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container py-8">
+        <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Event Guest Check-in</h1>
+
+        <!-- Navigation to Registration Page -->
+        <div class="card text-center">
+            <p class="text-lg mb-4">Go back to the registration page:</p>
+            <a href="index.html" class="btn-primary inline-block">Go to Registration</a>
+        </div>
+
+        <!-- User Info Display -->
+        <div class="card flex items-center justify-between">
+            <p class="text-lg font-semibold">Current User:</p>
+            <span id="userNameDisplay" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-mono break-all">Not Logged In</span>
+            <button id="logoutButton" class="btn-secondary hidden ml-4">Logout</button>
+        </div>
+        <div id="userEmailDisplayContainer" class="card flex items-center justify-between mt-4 hidden">
+            <p class="text-lg font-semibold">User Email:</p>
+            <span id="userEmailDisplay" class="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-mono break-all"></span>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="message-box hidden"></div>
+
+        <!-- User Login/Register Section -->
+        <div id="authSection" class="card">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Login / Register</h2>
+            <p class="text-gray-600 mb-4">Enter your details to log in or register a new account.</p>
+            <form id="authForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="userEmailInput" class="block text-gray-700 text-sm font-medium mb-2">Your Email</label>
+                    <input type="email" id="userEmailInput" class="input-field" placeholder="e.g., jane.doe@example.com" required>
+                </div>
+                <div>
+                    <label for="passwordInput" class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="passwordInput" class="input-field" placeholder="Enter your password" required>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="userFullNameInput" class="block text-gray-700 text-sm font-medium mb-2">Your Name (for Registration)</label>
+                    <input type="text" id="userFullNameInput" class="input-field" placeholder="e.g., Jane Doe">
+                </div>
+                <div class="md:col-span-2 flex justify-end gap-4">
+                    <button type="submit" id="loginButton" class="btn-primary">Login</button>
+                    <button type="button" id="registerButton" class="btn-secondary">Register</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Check-in Guest Section -->
+        <div id="checkinSection" class="card hidden">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-6">Check-in Guest</h2>
+            <p class="text-gray-600 mb-4">Scan a QR code or manually enter the Guest ID to check in a guest.</p>
+
+            <!-- QR Code Scanner Section -->
+            <div class="flex flex-col items-center mb-4">
+                <div id="reader" style="width: 100%; max-width: 400px;"></div>
+                <div class="flex gap-4 mt-4">
+                    <button id="startScanButton" class="btn-primary">Start QR Scan</button>
+                    <button id="stopScanButton" class="btn-secondary hidden">Stop QR Scan</button>
+                </div>
+            </div>
+
+            <div class="text-center my-4 text-gray-500">--- OR ---</div>
+
+            <!-- Manual Check-in Form -->
+            <form id="checkInForm" class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="checkInGuestId" class="input-field flex-grow" placeholder="Enter Guest ID manually" required>
+                <button type="submit" class="btn-primary">Check In Manually</button>
+            </form>
+
+            <div id="scannedGuestInfo" class="guest-info-display hidden">
+                <h3 class="text-xl font-semibold text-indigo-700 mb-3">Scanned Guest Details:</h3>
+                <p><strong>Name:</strong> <span id="scannedGuestName"></span></p>
+                <p><strong>Email:</strong> <span id="scannedGuestEmail"></span></p>
+                <p><strong>Place Number:</strong> <span id="scannedGuestPlaceNumber"></span></p>
+                <p><strong>Status:</strong> <span id="scannedGuestStatus" class="font-semibold"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-in Application Script -->
+    <script>
+        // Function to generate a UUID (Universally Unique Identifier)
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        let currentUserId = null; // Will store the auto-generated UUID
+        let currentUserName = null; // Will store the user's full name
+        let currentUserEmail = null; // Will store the user's email (used for login)
+        let currentSessionToken = null; // Stores the session token
+
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const userEmailDisplayContainer = document.getElementById('userEmailDisplayContainer');
+        const logoutButton = document.getElementById('logoutButton');
+        const messageBox = document.getElementById('messageBox');
+        const authSection = document.getElementById('authSection');
+        const authForm = document.getElementById('authForm');
+        const passwordInput = document.getElementById('passwordInput');
+        const userFullNameInput = document.getElementById('userFullNameInput');
+        const userEmailInput = document.getElementById('userEmailInput');
+        const loginButton = document.getElementById('loginButton');
+        const registerButton = document.getElementById('registerButton');
+        const checkinSection = document.getElementById('checkinSection');
+        const checkInForm = document.getElementById('checkInForm');
+        const checkInGuestIdInput = document.getElementById('checkInGuestId');
+        const scannedGuestInfoDiv = document.getElementById('scannedGuestInfo');
+        const scannedGuestNameSpan = document.getElementById('scannedGuestName');
+        const scannedGuestEmailSpan = document.getElementById('scannedGuestEmail');
+        const scannedGuestPlaceNumberSpan = document.getElementById('scannedGuestPlaceNumber');
+        const scannedGuestStatusSpan = document.getElementById('scannedGuestStatus');
+
+        // QR Scanner elements
+        const qrCodeReader = document.getElementById('reader');
+        const startScanButton = document.getElementById('startScanButton');
+        const stopScanButton = document.getElementById('stopScanButton');
+
+        let html5QrcodeScanner = null; // Will hold the scanner instance
+
+        const API_URL = 'api.php'; // The endpoint for our PHP backend
+
+        // Function to display messages
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type === 'success' ? 'message-success' : 'message-error'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        // Function to update UI based on login state
+        function updateLoginStateUI() {
+            if (currentSessionToken && currentUserId) { // Check for both token and ID
+                userNameDisplay.textContent = currentUserName || 'Logged In'; // Show user's name
+                userEmailDisplay.textContent = currentUserEmail || 'N/A';
+                userEmailDisplayContainer.classList.remove('hidden');
+                logoutButton.classList.remove('hidden');
+                authSection.classList.add('hidden');
+                checkinSection.classList.remove('hidden');
+                scannedGuestInfoDiv.classList.add('hidden'); // Hide guest info on login state change
+
+                // Check for guestId in URL on login/UI update
+                const urlParams = new URLSearchParams(window.location.search);
+                const guestIdFromUrl = urlParams.get('guestId');
+                if (guestIdFromUrl) {
+                    checkInGuestIdInput.value = guestIdFromUrl;
+                    // Optionally trigger auto-check-in if desired, but for now, just pre-fill
+                    // checkInGuest(guestIdFromUrl);
+                }
+
+            } else {
+                userNameDisplay.textContent = 'Not Logged In';
+                userEmailDisplay.textContent = '';
+                userEmailDisplayContainer.classList.add('hidden');
+                logoutButton.classList.add('hidden');
+                authSection.classList.remove('hidden');
+                checkinSection.classList.add('hidden');
+                scannedGuestInfoDiv.classList.add('hidden'); // Hide guest info if logged out
+            }
+        }
+
+        // Helper to make authenticated fetch requests
+        async function authenticatedFetch(url, options = {}) {
+            if (!currentSessionToken) {
+                showMessage("Authentication required. Please log in.", "error");
+                // Force UI update to login state
+                currentUserId = null;
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+                throw new Error("Not authenticated.");
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${currentSessionToken}`
+            };
+
+            const response = await fetch(url, options);
+
+            if (response.status === 401) { // Unauthorized
+                showMessage("Session expired or invalid. Please log in again.", "error");
+                currentUserId = null; // Clear state
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+                throw new Error("Authentication failed.");
+            }
+            return response;
+        }
+
+        // Handle Login
+        loginButton.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent full form submission
+            const email = userEmailInput.value.trim(); // Login by email
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        userEmail: email, // Send email for login
+                        password: password
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    currentUserId = data.userId; // This will be the UUID from backend
+                    currentUserName = data.userName;
+                    currentUserEmail = data.userEmail;
+                    currentSessionToken = data.sessionToken;
+
+                    localStorage.setItem('eventManagerUserId', currentUserId);
+                    localStorage.setItem('eventManagerUserName', currentUserName);
+                    localStorage.setItem('eventManagerUserEmail', currentUserEmail);
+                    localStorage.setItem('eventManagerSessionToken', currentSessionToken);
+
+                    updateLoginStateUI();
+                    showMessage(`Logged in as ${currentUserName} (${currentUserEmail})!`, 'success');
+                } else {
+                    showMessage(`Login failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during login:", error);
+                showMessage("Network error or server issue during login.", "error");
+            }
+        });
+
+        // Handle Registration
+        registerButton.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent full form submission
+            const userFullName = userFullNameInput.value.trim();
+            const userEmail = userEmailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!userFullName || !userEmail || !password) {
+                showMessage("Please fill in all fields (Name, Email, Password) for registration.", "error");
+                return;
+            }
+
+            // Auto-generate userId (UUID) for registration
+            const newUserId = generateUUID();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        userId: newUserId, // Send auto-generated UUID
+                        userName: userFullName,
+                        userEmail: userEmail,
+                        password: password
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Registration successful: ${data.message}`, 'success');
+                    // Optionally clear form or auto-login
+                    // authForm.reset();
+                    // After successful registration, you might want to auto-login
+                    // For now, we'll just show the message and let user manually login
+                } else {
+                    showMessage(`Registration failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during registration:", error);
+                showMessage("Network error or server issue during registration.", "error");
+            }
+        });
+
+        // Handle logout button click
+        logoutButton.addEventListener('click', async () => {
+            if (!currentSessionToken) {
+                showMessage("You are not logged in.", "error");
+                return;
+            }
+            try {
+                const response = await authenticatedFetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'logout',
+                        sessionToken: currentSessionToken // Send token for invalidation
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage("Logged out successfully.", "success");
+                } else {
+                    showMessage(`Logout failed: ${data.message}`, "error");
+                }
+            } catch (error) {
+                console.error("Error during logout:", error);
+                showMessage("Network error or server issue during logout.", "error");
+            } finally {
+                // Always clear client-side state regardless of backend success/failure
+                currentUserId = null;
+                currentUserName = null;
+                currentUserEmail = null;
+                currentSessionToken = null;
+                localStorage.removeItem('eventManagerUserId');
+                localStorage.removeItem('eventManagerUserName');
+                localStorage.removeItem('eventManagerUserEmail');
+                localStorage.removeItem('eventManagerSessionToken');
+                updateLoginStateUI();
+            }
+        });
+
+        // Fetch a single guest's details
+        async function getGuestDetails(guestId) {
+            if (!currentUserId || !currentSessionToken) {
+                showMessage("Please log in to fetch guest details.", "error");
+                return null;
+            }
+            try {
+                const response = await authenticatedFetch(`${API_URL}?action=getGuestDetails&userId=${currentUserId}&guestId=${guestId}`);
+                const data = await response.json();
+                if (data.success && data.guest) {
+                    return data.guest;
+                } else {
+                    console.error("Error fetching guest details:", data.message);
+                    return null;
+                }
+            } catch (error) {
+                console.error("Network error fetching guest details:", error);
+                return null;
+            }
+        }
+
+        // Check-in a guest
+        async function checkInGuest(guestId) {
+            if (!currentUserId || !currentSessionToken) {
+                showMessage("Please log in to check in guests.", "error");
+                return;
+            }
+            scannedGuestInfoDiv.classList.add('hidden'); // Hide previous info
+
+            try {
+                const response = await authenticatedFetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'checkInGuest',
+                        userId: currentUserId,
+                        guestId
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`Guest ${guestId} checked in successfully!`, 'success');
+                    // Fetch and display updated guest details
+                    const guestDetails = await getGuestDetails(guestId);
+                    if (guestDetails) {
+                        scannedGuestNameSpan.textContent = guestDetails.name;
+                        scannedGuestEmailSpan.textContent = guestDetails.email;
+                        scannedGuestPlaceNumberSpan.textContent = guestDetails.place_number;
+                        scannedGuestStatusSpan.textContent = guestDetails.status;
+                        scannedGuestStatusSpan.className = guestDetails.status === 'Checked-in' ? 'status-checked-in' : 'status-pending';
+                        scannedGuestInfoDiv.classList.remove('hidden');
+                    }
+                } else {
+                    showMessage(`Failed to check in guest: ${data.message}`, "error");
+                    // If check-in failed, still try to show current guest status if found
+                    const guestDetails = await getGuestDetails(guestId);
+                    if (guestDetails) {
+                        scannedGuestNameSpan.textContent = guestDetails.name;
+                        scannedGuestEmailSpan.textContent = guestDetails.email;
+                        scannedGuestPlaceNumberSpan.textContent = guestDetails.place_number;
+                        scannedGuestStatusSpan.textContent = guestDetails.status;
+                        scannedGuestStatusSpan.className = guestDetails.status === 'Checked-in' ? 'status-checked-in' : 'status-pending';
+                        scannedGuestInfoDiv.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking in guest:", error);
+                showMessage("Network error or server issue while checking in guest.", "error");
+            }
+        }
+
+        // Handle manual check-in form submission
+        checkInForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idToScan = checkInGuestIdInput.value.trim();
+            if (idToScan) {
+                await checkInGuest(idToScan);
+                checkInGuestIdInput.value = ''; // Clear input
+            } else {
+                showMessage("Please enter a Guest ID to check in.", "error");
+            }
+        });
+
+        // --- QR Code Scanning Logic ---
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`QR Code scanned: ${decodedText}`, decodedResult);
+            showMessage(`QR Code scanned: ${decodedText}`, 'success');
+            // Stop the scanner once a code is successfully scanned
+            html5QrcodeScanner.stop().then(() => {
+                startScanButton.classList.remove('hidden');
+                stopScanButton.classList.add('hidden');
+                qrCodeReader.style.display = 'none'; // Hide reader
+            }).catch((err) => {
+                console.error("Failed to stop scanner:", err);
+                showMessage("Failed to stop QR scanner.", "error");
+            });
+
+            // Process the scanned guest ID
+            checkInGuest(decodedText);
+        }
+
+        function onScanError(errorMessage) {
+            // console.warn(`QR Code Scan Error: ${errorMessage}`); // Log errors but don't spam messages
+        }
+
+        startScanButton.addEventListener('click', () => {
+            if (!currentUserId || !currentSessionToken) {
+                showMessage("Please log in to start QR scanning.", "error");
+                return;
+            }
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
+            qrCodeReader.style.display = 'block'; // Show reader
+            startScanButton.classList.add('hidden');
+            stopScanButton.classList.remove('hidden');
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Prefer rear camera
+                {
+                    fps: 10,    // frames per second
+                    qrbox: { width: 250, height: 250 } // Scan box size
+                },
+                onScanSuccess,
+                onScanError
+            ).catch((err) => {
+                console.error("Failed to start scanner:", err);
+                showMessage(`Failed to start QR scanner: ${err}`, "error");
+                startScanButton.classList.remove('hidden');
+                stopScanButton.classList.add('hidden');
+                qrCodeReader.style.display = 'none'; // Hide reader on error
+            });
+        });
+
+        stopScanButton.addEventListener('click', () => {
+            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    showMessage("QR Scan stopped.", "info");
+                    startScanButton.classList.remove('hidden');
+                    stopScanButton.classList.add('hidden');
+                    qrCodeReader.style.display = 'none'; // Hide reader
+                }).catch((err) => {
+                    console.error("Failed to stop scanner:", err);
+                    showMessage("Failed to stop QR scanner.", "error");
+                });
+            }
+        });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Try to retrieve a previously logged-in user
+            currentUserId = localStorage.getItem('eventManagerUserId');
+            currentUserName = localStorage.getItem('eventManagerUserName');
+            currentUserEmail = localStorage.getItem('eventManagerUserEmail');
+            currentSessionToken = localStorage.getItem('eventManagerSessionToken');
+
+            updateLoginStateUI();
+            qrCodeReader.style.display = 'none'; // Ensure scanner is hidden initially
+        });
+    </script>
+</body>
+</html>
